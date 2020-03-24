@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "babel-node ./bin/www",
+    "debug": "set DEBUG=konan-server:server & babel-node --inspect ./bin/www"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
@@ -11,6 +12,12 @@
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
     "jade": "~1.11.0",
-    "morgan": "~1.9.1"
+    "morgan": "~1.9.1",
+    "neo4j-driver": "^4.0.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.9.0",
+    "@babel/node": "^7.8.7",
+    "@babel/preset-env": "^7.9.0"
   }
 }
