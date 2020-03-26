@@ -4,7 +4,6 @@ const neo4j = require('neo4j-driver')
 const driver = neo4j.driver(config.dbUri);
 
 function recordsToTree(records) {
-    const linkToParent = new Map();
     const idToValue = new Map();
     let root;
 
@@ -14,11 +13,11 @@ function recordsToTree(records) {
         const relation = record.get('relation');
         let child = record.get('child');
         const childId = JSON.stringify(child.identity);
-        parent = idToValue.get(parentId) ?? { ...parent };
-        child = idToValue.get(childId) ?? { ...child };
-        const children = parent['children'] ?? new Map();
+        parent = idToValue.get(parentId) ?? { ...parent, children: [] };
+        child = idToValue.get(childId) ?? { ...child , children: []};
+        const children = parent['children'];
         const edgeValue = relation.properties.name ?? '';
-        children.set(edgeValue, child)
+        children.push({...child, pathValue: edgeValue})
         parent['children'] = children;
         idToValue.set(parentId, parent);
         idToValue.set(childId, child);

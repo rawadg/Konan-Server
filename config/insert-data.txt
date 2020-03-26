@@ -1,0 +1,7 @@
+create (root: Root)-[:LEADS_TO] -> (q1 :Question :DumbUser {name: 'is the screen on?'}),
+(q2 :Question :DumbUser {name: 'is the power on?'}) <- [:LEADS_TO {name: 'no'}] - (q1),
+(q3 :Question :DumbUser {name: 'is the mouse connected?'}) <- [:LEADS_TO {name: 'yes'}] - (q1),
+(s1 :Solution :DumbUser {name: 'connect mouse', link: 'https://neo4j.com/developer/get-started/'}) <- [:LEADS_TO {name: 'no'}] - (q3),
+(s2 :Solution {name: 'restart', link: 'https://neo4j.com/developer/get-started/'}) <- [:LEADS_TO {name: 'yes'}] - (q3),
+(q2) -[: LEADS_TO {name: 'yes'}] -> (s2),
+(s3 :Solution {name: 'call help'}) <- [:LEADS_TO {name: 'no'}] - (q2)

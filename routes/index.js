@@ -11,21 +11,11 @@ router.get('/', function(req, res, next) {
 router.get('/getAll', async function(req, res, next) {
   try {
     const graph = await getAll();
-    const grapJson = JSON.stringify(graph, mapReplacer);
-    res.setHeader('Content-Type', 'application/json');
-    res.send(grapJson);
+    res.send(graph);
   } catch(err) {
     console.log(err);
     res.status(500).send();
   }
 });
-
-function mapReplacer(key, value) {
-  if ( value instanceof Map) {
-    return [...value];
-  }
-  return value;
-}
-
 
 module.exports = router;
