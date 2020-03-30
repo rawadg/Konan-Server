@@ -1,40 +1,42 @@
 import config from '../config/config.js'
+import { NodeForClient, EdgeForClient } from './client-types.js';
 const neo4j = require('neo4j-driver')
 
 const driver = neo4j.driver(config.dbUri);
 
-function recordsToTree(records) {
-    const idToValue = new Map();
-    let root;
-
-    records.forEach(record => {
-        let parent = record.get('parent');
-        const parentId = JSON.stringify(parent.identity);
-        const relation = record.get('relation');
-        let child = record.get('child');
-        const childId = JSON.stringify(child.identity);
-        parent = idToValue.get(parentId) ?? { ...parent, children: [] };
-        child = idToValue.get(childId) ?? { ...child , children: []};
-        const children = parent['children'];
-        const edgeValue = relation.properties.name ?? '';
-        children.push({...child, pathValue: edgeValue})
-        parent['children'] = children;
-        idToValue.set(parentId, parent);
-        idToValue.set(childId, child);
-        if (parent.labels.includes('Root')) {
-            root = parent;
-        }
-    });
-    return root;
+function recordsToGraph(records) {
+    let [[nodes, edges]] = records.map(record => [record.get('nodes'), record.get('edges')])
+    nodes = nodes.map(node => new NodeForClient(node));
+    edges = edges.map(edge => new EdgeForClient(edge));
+    return { nodes: nodes, edges: edges };
 }
 
-export default async function getAll() {
+export async function getFullGraph() {
     const session = driver.session()
     try {
         const result = await session.run(
-            'match(parent)-[relation]->(child) return parent,relation,child'
+            `MATCH path = (r: Root) -[*0..]->(n)
+            WITH relationships(path) as edges, n as n
+            UNWIND (CASE edges WHEN [] then [null] else edges end) as edge
+            RETURN collect(DISTINCT edge) as edges, collect(DISTINCT n) as nodes`
         )
-        return recordsToTree(result.records);
+        return recordsToGraph(result.records);
+    } finally {
+        await session.close()
+    }
+}
+
+export async function getSubGraph(rootId) {
+    const session = driver.session()
+    try {
+        const result = await session.run(
+            `MATCH path = (r) -[*0..]->(n)
+            WHERE ID(r)=${rootId}
+            WITH relationships(path) as edges, n as n
+            UNWIND (CASE edges WHEN [] then [null] else edges end) as edge
+            RETURN collect(DISTINCT edge) as edges, collect(DISTINCT n) as nodes`
+        )
+        return recordsToGraph(result.records);
     } finally {
         await session.close()
     }
